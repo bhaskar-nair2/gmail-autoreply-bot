@@ -1,14 +1,65 @@
-import os.path
+import os
+from dotenv import load_dotenv
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from google.cloud import secretmanager
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
+load_dotenv()
+
+# ! If modifying these scopes, delete the file token.json.
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly",
+          "https://www.googleapis.com/auth/gmail.compose",
+          "https://www.googleapis.com/auth/gmail.send",
+          "https://www.googleapis.com/auth/gmail.addons.current.message.action"
+          ]
+LABELS = ["STARRED","INBOX"]
+PUBSUB_TOPIC = "projects/vraie-3a692/topics/gmail_bot_messages"
+
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT") # Automatically set by Cloud Functions
+SECRET_NAME_GMAIL_CREDS = os.environ.get("SECRET_NAME_GMAIL_CREDS") # Name of the secret in 
+
+
+from google.cloud import secretmanager
+import google_crc32c  # type: ignore
+
+
+def add_secret_version() -> secretmanager.SecretVersion:
+    """
+    Add a new secret version to the given secret with the provided payload.
+    """
+    # Create the Secret Manager client.
+    client = secretmanager.SecretManagerServiceClient()
+    # Build the resource name of the parent secret.
+    parent = client.secret_path(PROJECT_ID, SECRET_NAME_GMAIL_CREDS)
+    # Convert the string payload into a bytes. This step can be omitted if you
+    # pass in bytes instead of a str for the payload argument.
+    
+    with open("token.json", "rb") as f:
+        payload_bytes = f.read()
+
+    # Calculate payload checksum. Passing a checksum in add-version request
+    # is optional.
+    crc32c = google_crc32c.Checksum()
+    crc32c.update(payload_bytes)
+
+    # Add the secret version.
+    response = client.add_secret_version(
+        request={
+            "parent": parent,
+            "payload": {
+                "data": payload_bytes,
+                "data_crc32c": int(crc32c.hexdigest(), 16),
+            },
+        }
+    )
+
+    # Print the new secret version name.
+    print(f"Added secret version: {response.name}")
 
 def main():
   """Shows basic usage of the Gmail API.
@@ -32,7 +83,9 @@ def main():
     # Save the credentials for the next run
     with open("token.json", "w") as token:
       token.write(creds.to_json())
-
+    # Add the secret version to Secret Manager
+    add_secret_version()
+      
   # Call gmail.user.watch to connect to cloud function
   try:
     # Call the Gmail API
@@ -40,8 +93,8 @@ def main():
     service.users().watch(
         userId="me",
         body={
-            "labelIds": ["STARRED","INBOX"],
-            "topicName": "projects/vraie-3a692/topics/gmail_bot_messages",
+            "labelIds": LABELS,
+            "topicName": PUBSUB_TOPIC,
         },
     ).execute()
     
