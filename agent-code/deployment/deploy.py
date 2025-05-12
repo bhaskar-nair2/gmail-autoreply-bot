@@ -11,14 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
+from dotenv import load_dotenv
 import vertexai
 from vertexai import agent_engines
 from vertexai.preview.reasoning_engines import AdkApp
 import logging
-import os
 from dotenv import set_key
 from gmail_agent.agent import root_agent
+
+load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -61,9 +63,13 @@ remote_app = agent_engines.create(
         "google-auth",
         "tqdm",
         "requests",
+        "pydantic-settings",
+        "tabulate",
+        "requests",
+        "llama-index"
     ],
     extra_packages=[
-        "./rag",
+        "./gmail_agent",
     ],
 )
 
