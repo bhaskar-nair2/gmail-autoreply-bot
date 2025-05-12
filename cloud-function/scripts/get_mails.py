@@ -1,55 +1,14 @@
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+import base64
+
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-import os.path
+# Scripts
+from .gmail_service import get_gmail_service
+
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-
-def get_gmail_service():
-  """Shows basic usage of the Gmail API.
-  Initializes the Gmail service using credentials.
-  """
-  creds = None
-  # The file token.json stores the user's access and refresh tokens, and is
-  # created automatically when the authorization flow completes for the first
-  # time.
-  if os.path.exists('token.json'):
-    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-  # If there are no (valid) credentials available, let the user log in.
-  if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-      try:
-        creds.refresh(Request())
-      except Exception as e:
-        print(f"Failed to refresh token: {e}. Need to re-authenticate.")
-        creds = None # Force re-authentication
-    if not creds: # If refresh failed or no token.json
-       # Ensure 'credentials.json' is downloaded from Google Cloud Console
-      if not os.path.exists('credentials.json'):
-         print("Error: credentials.json not found. Please download it from Google Cloud Console.")
-         return None
-      flow = InstalledAppFlow.from_client_secrets_file(
-        'credentials.json', SCOPES)
-      # Run flow in console; for server apps, use different flow
-      creds = flow.run_local_server(port=0)
-    # Save the credentials for the next run
-    with open('token.json', 'w') as token:
-      token.write(creds.to_json())
-
-  try:
-    service = build('gmail', 'v1', credentials=creds)
-    return service
-  except HttpError as error:
-    print(f'An error occurred building the service: {error}')
-    return None
-  except Exception as e:
-    print(f'An unexpected error occurred: {e}')
-    return None
-
 
 def get_emails_from_history(service, start_history_id):
   """
@@ -66,7 +25,7 @@ def get_emails_from_history(service, start_history_id):
     history = service.users().history().list(
       userId='me',
       startHistoryId=start_history_id,
-      historyTypes=['messageAdded'] # Focus on added messages
+      # historyTypes=['messageAdded'] # Focus on added messages
     ).execute()
 
     messages = []
@@ -82,17 +41,16 @@ def get_emails_from_history(service, start_history_id):
        ).execute()
        changes.extend(history.get('history', []))
 
-
+    print(changes)
+    
     for change in changes:
-      added_messages = change.get('messagesAdded', [])
-      for msg_info in added_messages:
-        msg = msg_info.get('message')
+      added_messages = change.get('messages', [])
+      for msg in added_messages:
         if msg:
-          # You might want to fetch the full message details here if needed
-          # full_message = service.users().messages().get(userId='me', id=msg['id'], format='metadata').execute()
-          # messages.append(full_message)
-          messages.append(msg) # Add basic message info (id, threadId)
-
+          # Fetch the full message details here
+          full_message = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
+          # Extract relevant details
+          messages.append(get_email_details(full_message)) 
     return messages
 
   except HttpError as error:
@@ -105,32 +63,69 @@ def get_emails_from_history(service, start_history_id):
     print(f'An unexpected error occurred during history retrieval: {e}')
     return None
 
+
+# --- Helper function to extract relevant email parts ---
+def get_email_details(message_resource):
+    """
+    Extracts sender, subject, and plain text body from message payload.
+    """
+    
+    email_data = {"from": None, "subject": None, "body": None, "thread_id": None, "message_id_header": None}
+    try:
+        payload = message_resource.get("payload", {})
+        headers = payload.get("headers", [])
+        
+        email_data["from"] = next((h["value"] for h in headers if h["name"].lower() == "from"), None)
+        email_data["subject"] = next((h["value"] for h in headers if h["name"].lower() == "subject"), "No Subject")
+        email_data["message_id_header"] = next((h["value"] for h in headers if h["name"].lower() == "message-id"), None)
+        email_data["thread_id"] = message_resource.get("threadId")
+
+        if 'parts' in payload:
+            for part in payload['parts']:
+                if part['mimeType'] == 'text/plain':
+                    body_data = part['body'].get('data')
+                    if body_data:
+                        email_data["body"] = base64.urlsafe_b64decode(body_data).decode('utf-8')
+                        break # Found plain text, stop
+        elif payload.get('mimeType') == 'text/plain':
+             body_data = payload['body'].get('data')
+             if body_data:
+                 email_data["body"] = base64.urlsafe_b64decode(body_data).decode('utf-8')
+        
+        if not email_data["body"]:
+             # Fallback or get snippet if no plain text body
+             email_data["body"] = message_resource.get("snippet", "Could not extract body.")
+             print("Could not find plain text body part, using snippet.")
+
+        return email_data
+    except Exception as e:
+        print(f"Error parsing email details: {e}")
+        return email_data # Return partially filled data
+
+# For testing purposes, you can run this script directly.
 if __name__ == '__main__':
   # Replace with the actual startHistoryId you want to query from
   # You typically get this from a previous API call or a push notification
-  start_history_id = 'YOUR_START_HISTORY_ID' # <<< --- REPLACE THIS
+  start_history_id = '6212' # <<< --- REPLACE THIS
 
-  if start_history_id == 'YOUR_START_HISTORY_ID':
-    print("Please replace 'YOUR_START_HISTORY_ID' with an actual history ID.")
-  else:
-    gmail_service = get_gmail_service()
-    if gmail_service:
-      print(f"Fetching emails added since history ID: {start_history_id}")
-      new_emails = get_emails_from_history(gmail_service, start_history_id)
+  gmail_service = get_gmail_service()
+  if gmail_service:
+    print(f"Fetching emails added since history ID: {start_history_id}")
+    new_emails = get_emails_from_history(gmail_service, start_history_id)
 
-      if new_emails is not None:
-        if new_emails:
-          print(f"\nFound {len(new_emails)} new messages:")
-          for email in new_emails:
-            print(f"  Message ID: {email.get('id')}, Thread ID: {email.get('threadId')}")
-            # To get more details (Subject, From, etc.), you'd need another API call:
-            # msg_detail = gmail_service.users().messages().get(userId='me', id=email.get('id'), format='metadata').execute()
-            # headers = msg_detail.get('payload', {}).get('headers', [])
-            # subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'N/A')
-            # print(f"    Subject: {subject}")
-        else:
-          print("No new messages found since the specified history ID.")
+    if new_emails is not None:
+      if new_emails:
+        print(f"\nFound {len(new_emails)} new messages:")
+        for email in new_emails:
+          print(f"  Message ID: {email.get('id')}, Data {get_email_details(email)}")
+          # To get more details (Subject, From, etc.), you'd need another API call:
+          # msg_detail = gmail_service.users().messages().get(userId='me', id=email.get('id'), format='metadata').execute()
+          # headers = msg_detail.get('payload', {}).get('headers', [])
+          # subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'N/A')
+          # print(f"    Subject: {subject}")
       else:
-        print("Failed to retrieve email history.")
+        print("No new messages found since the specified history ID.")
     else:
-      print("Failed to initialize Gmail service.")
+      print("Failed to retrieve email history.")
+  else:
+    print("Failed to initialize Gmail service.")
