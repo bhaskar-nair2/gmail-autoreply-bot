@@ -68,8 +68,10 @@ def send_reply_email(service, user_id, original_email_data, reply_body_text):
         if original_email_data.get("thread_id"):
              send_request_body['threadId'] = original_email_data["thread_id"]
 
-        sent_message = service.users().messages().send(userId=user_id, body=send_request_body).execute()
-        print(f"Reply email sent. Message ID: {sent_message['id']}")
+        # TODO: Uncomment the next line to actually send the email
+        # sent_message = service.users().messages().send(userId=user_id, body=send_request_body).execute()
+        
+        # print(f"Reply email sent. Message ID: {sent_message['id']}")
         return True
 
     except HttpError as error:

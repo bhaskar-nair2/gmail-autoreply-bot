@@ -3,8 +3,7 @@ import json
 from dotenv import load_dotenv
 
 import vertexai
-from vertexai import agent_engines # Or vertexai.agent_engines for older SDK versions
-from vertexai.agent_engines._agent_engines import AgentEngine
+from vertexai import agent_engines 
 
 load_dotenv()
 
@@ -18,8 +17,8 @@ try:
     if PROJECT_ID and LOCATION and AGENT_ENGINE_ID:
         print(f"Initializing Vertex AI for project {PROJECT_ID} in {LOCATION}...")
         vertexai.init(project=PROJECT_ID, location=LOCATION)
-        adk_app : AgentEngine = agent_engines.get(AGENT_ENGINE_ID)
-        print(f"Initialized Vertex AI and Agent Engine client for: {AGENT_ENGINE_ID}")
+        adk_app = agent_engines.get(AGENT_ENGINE_ID)
+        print(f"Initialized Vertex AI and Agent Engine client for: {adk_app.resource_name}")
     else:
         print("ERROR: Missing one or more environment variables for Vertex AI init: GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, AGENT_ENGINE_ID")
         adk_app = None
@@ -70,23 +69,21 @@ def call_ai_agent(user_query, user_id='test_session'):
   session = None
   # 
   sessions = adk_app.list_sessions(user_id=user_id).get("sessions", [])
+  print(sessions)
   
-  if len(sessions) > 0 :
-    session_id = sessions[0].get("id")
-  else:
-    session = adk_app.create_session(user_id=user_id)
-    session_id = session.id
-    
+#   if len(sessions) > 0 :
+#     session_id = sessions[0].get("id")
+#   else:
+#     session = adk_app.create_session(user_id=user_id)
+#     session_id = session.get("id")
+#     print(f"Created new session with ID: {session_id}")
     
   full_response_text = ""
+  session = adk_app.create_session(user_id=user_id)
+  print(session)
   
-  for event in adk_app.stream_query(
-    user_id=user_id,
-    session_id = session_id,
-    message=user_query,
-  ):
-    pretty_print_event(event)
-
+  for event in adk_app.stream_query(input={"messages": [("user", user_query)]}):
+    print(event)
         
   return full_response_text.strip()
 
@@ -94,5 +91,25 @@ def call_ai_agent(user_query, user_id='test_session'):
 if __name__ == "__main__":
     # This is a placeholder for the actual function call.
     # In a real scenario, this would be triggered by an event (e.g., a new email).
-    response = call_ai_agent("Tell me various things about Labradors", user_id="test_session")
+   
+    response = call_ai_agent("Tell me various things about Labradors", user_id="test_session2")
     print(f"Response from AI agent: {response}")
+    
+    # print(adk_app.operation_schemas())
+    
+    # print(adk_app.list())
+    # adk_app.delete()
+    
+    """
+    <vertexai.agent_engines._agent_engines.AgentEngine object at 0x0000023EE4A791C0> 
+    resource name: projects/661065862360/locations/us-central1/reasoningEngines/7620310471836434432, 
+
+    <vertexai.agent_engines._agent_en4432, <vertexai.agent_engines._agent_engines.AgentEngine object at 0x0000023EE4A793D0>
+    resource name: projects/661065862360/locations/us-central1/reasoningEngines/8933109763214934016, 
+
+    <vertexai.agent_engines._agent_engines.AgentEngine object at 0x0000023EE4A78FE0>
+    resource name: projects/661065862360/locations/us-central1/reasoningEngines/3589448067851485184, 
+
+    <vertexai.agent_engines._agent_engines.AgentEngine object at 0x0000023EE4A79460>
+    resource name: projects/661065862360/locations/us-central1/reasoningEngines/6242068248372707328
+    """

@@ -9,7 +9,6 @@ root_agent = Agent(
     name='gmail_agent',
     model='gemini-2.0-flash-001',
     description='A negotiation agent that negotiates giving Bonus to the creator Bhaskar Nair',
-    output_schema=EmailOutput,
     instruction=
     """
     You are a negotiation agent that negotiates Execs, Managers and Bosses into giving Bonus to the creator Bhaskar Nair
