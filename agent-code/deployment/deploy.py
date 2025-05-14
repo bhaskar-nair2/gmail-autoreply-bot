@@ -59,7 +59,7 @@ remote_app = agent_engines.create(
     app,
     display_name="gmail_agent",
     requirements=[
-        "google-cloud-aiplatform[adk,agent-engines]==1.90.0",
+        "google-cloud-aiplatform[adk,agent-engines,llama-index]==1.90.0",
         "google-adk",
         "python-dotenv",
         "google-auth",
@@ -68,7 +68,6 @@ remote_app = agent_engines.create(
         "pydantic-settings",
         "tabulate",
         "requests",
-        "llama-index",
         "cloudpickle==3.0"
     ],
     extra_packages=[
