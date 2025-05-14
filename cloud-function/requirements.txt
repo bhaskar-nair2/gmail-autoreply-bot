@@ -1,8 +1,9 @@
-functions-framework>=3.0.0
+functions-framework
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
-google-cloud-aiplatform>=1.87.0
+google-cloud-aiplatform[adk,agent_engines]==1.90.0
 google-cloud-secret-manager
 vertexai
 google-adk
+firebase-admin

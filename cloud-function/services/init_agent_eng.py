@@ -4,7 +4,7 @@ import vertexai
 from vertexai import agent_engines
 
 
-def create_agent_engine_client() -> agent_engines.AgentEngine:
+def create_agent_engine_client():
   """
   Create an Agent Engine client using the provided credentials.
   """
@@ -20,6 +20,7 @@ def create_agent_engine_client() -> agent_engines.AgentEngine:
           print(f"Initializing Vertex AI for project {PROJECT_ID} in {LOCATION}...")
           vertexai.init(project=PROJECT_ID, location=LOCATION)
           agent_engine_client = agent_engines.get(AGENT_ENGINE_ID)
+          print(agent_engine_client)
           print(f"Initialized Vertex AI and Agent Engine client for: {AGENT_ENGINE_ID}")
           return agent_engine_client
       else:
