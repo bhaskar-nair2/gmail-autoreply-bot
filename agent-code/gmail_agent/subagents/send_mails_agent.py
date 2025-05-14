@@ -1,6 +1,6 @@
 from google.adk.agents import Agent
 from pydantic import BaseModel, Field
-from scripts.send_mail import send_email
+from ..scripts.send_mail import send_email
 
 
 send_mail_agent = Agent(
