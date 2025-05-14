@@ -2,10 +2,10 @@ import base64
 from email.message import EmailMessage
 
 from googleapiclient.errors import HttpError
-from .gmail_service import get_gmail_service
+from .gmail_service import instance
 
 
-def send_email(service, message:EmailMessage):
+def send_email(message:EmailMessage):
   """Create and send an email message
   Print the returned  message id
   Returns: Message object, including message id
@@ -16,6 +16,7 @@ def send_email(service, message:EmailMessage):
   """
 
   try:
+    service = instance.service
     # encoded message
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     create_message = {"raw": encoded_message}
@@ -34,7 +35,6 @@ def send_email(service, message:EmailMessage):
 
 # For testing purposes
 if __name__ == "__main__":
-  service = get_gmail_service()
   to_email = "b.bhaskar.nair@gmail.com"
   from_email = "bhaskarnair.work@gmail.com" 
   subject, content = "TEST", "This is a test email"
@@ -45,4 +45,4 @@ if __name__ == "__main__":
   message["From"] = from_email
   message["Subject"] = subject
   
-  send_email(service, message)
+  send_email( message)

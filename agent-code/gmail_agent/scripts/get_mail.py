@@ -3,6 +3,9 @@ import base64
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+# Scripts
+from .gmail_service import get_gmail_service
+
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -37,6 +40,8 @@ def get_emails_from_history(service, start_history_id):
          pageToken=page_token
        ).execute()
        changes.extend(history.get('history', []))
+
+    print(changes)
     
     for change in changes:
       added_messages = change.get('messages', [])
@@ -45,7 +50,7 @@ def get_emails_from_history(service, start_history_id):
           # Fetch the full message details here
           full_message = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
           # Extract relevant details
-          messages.append(full_message) 
+          messages.append(get_email_details(full_message)) 
     return messages
 
   except HttpError as error:
@@ -98,29 +103,29 @@ def get_email_details(message_resource):
         return email_data # Return partially filled data
 
 # For testing purposes, you can run this script directly.
-# if __name__ == '__main__':
-#   # Replace with the actual startHistoryId you want to query from
-#   # You typically get this from a previous API call or a push notification
-#   start_history_id = '6212' # <<< --- REPLACE THIS
+if __name__ == '__main__':
+  # Replace with the actual startHistoryId you want to query from
+  # You typically get this from a previous API call or a push notification
+  start_history_id = '6212' # <<< --- REPLACE THIS
 
-#   gmail_service = get_gmail_service()
-#   if gmail_service:
-#     print(f"Fetching emails added since history ID: {start_history_id}")
-#     new_emails = get_emails_from_history(gmail_service, start_history_id)
+  gmail_service = get_gmail_service()
+  if gmail_service:
+    print(f"Fetching emails added since history ID: {start_history_id}")
+    new_emails = get_emails_from_history(gmail_service, start_history_id)
 
-#     if new_emails is not None:
-#       if new_emails:
-#         print(f"\nFound {len(new_emails)} new messages:")
-#         for email in new_emails:
-#           print(f"  Message ID: {email.get('id')}, Data {get_email_details(email)}")
-#           # To get more details (Subject, From, etc.), you'd need another API call:
-#           # msg_detail = gmail_service.users().messages().get(userId='me', id=email.get('id'), format='metadata').execute()
-#           # headers = msg_detail.get('payload', {}).get('headers', [])
-#           # subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'N/A')
-#           # print(f"    Subject: {subject}")
-#       else:
-#         print("No new messages found since the specified history ID.")
-#     else:
-#       print("Failed to retrieve email history.")
-#   else:
-#     print("Failed to initialize Gmail service.")
+    if new_emails is not None:
+      if new_emails:
+        print(f"\nFound {len(new_emails)} new messages:")
+        for email in new_emails:
+          print(f"  Message ID: {email.get('id')}, Data {get_email_details(email)}")
+          # To get more details (Subject, From, etc.), you'd need another API call:
+          # msg_detail = gmail_service.users().messages().get(userId='me', id=email.get('id'), format='metadata').execute()
+          # headers = msg_detail.get('payload', {}).get('headers', [])
+          # subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'N/A')
+          # print(f"    Subject: {subject}")
+      else:
+        print("No new messages found since the specified history ID.")
+    else:
+      print("Failed to retrieve email history.")
+  else:
+    print("Failed to initialize Gmail service.")
