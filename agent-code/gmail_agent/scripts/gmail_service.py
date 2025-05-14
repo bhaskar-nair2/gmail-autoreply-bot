@@ -13,13 +13,10 @@ load_dotenv()
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT") 
 SECRET_NAME_GMAIL_CREDS = os.environ.get("SECRET_NAME_GMAIL_CREDS")
 
-
-
-
 class GmailService():
     def __init__(self):
         self.service = self.create_gmail_service()
-
+    
     def create_gmail_service(self):
         """
         Authenticates and returns a Gmail API service object.
@@ -58,9 +55,9 @@ class GmailService():
             raise ConnectionError(f"Could not build Gmail service: {e}")
 
 # ! Global variable to hold the Gmail service instance
-service_instance = None # Initialize as None
+instance = GmailService() # Initialize as None
 
 def initialize_service():
-    global service_instance
-    GMS = GmailService()
-    service_instance = GMS.service
+    global instance
+    instance = GmailService()
+    print("Gmail service initialized.")

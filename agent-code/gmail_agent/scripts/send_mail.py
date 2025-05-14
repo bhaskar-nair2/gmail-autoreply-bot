@@ -3,8 +3,7 @@ from email.message import EmailMessage
 
 from googleapiclient.errors import HttpError
 from google.adk.tools import ToolContext
-
-from .gmail_service import GmailService 
+from .gmail_service import instance 
 
 
 def send_email(recipient_email : str,subject : str,email_content : str, tool_context: ToolContext):
@@ -17,7 +16,7 @@ def send_email(recipient_email : str,subject : str,email_content : str, tool_con
     - email_content (str): Main contents of the email
   """
   
-  service = GmailService().service
+  service = instance.service
   
   message = EmailMessage()
   message.set_content(email_content)
