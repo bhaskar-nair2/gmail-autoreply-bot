@@ -22,7 +22,7 @@ def get_emails_from_history(service,*, history_id):
     history = service.users().history().list(
       userId='me',
       startHistoryId=history_id,
-      # historyTypes=['messageAdded'] # Focus on added messages
+      historyTypes=['messageAdded'] # Focus on added messages
     ).execute()
 
     messages = []

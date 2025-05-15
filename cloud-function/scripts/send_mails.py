@@ -12,14 +12,14 @@ def send_mail(service, *, to_email, from_email, subject, content):
   TODO(developer) - See https://developers.google.com/identity
   for guides on implementing OAuth2 for the application.
   """
-
+  print("-----Sending email-----")
   try:
     # encoded message
     message = EmailMessage()
-    message.set_content(content)
+    message.set_content(f"{content}")
     message["To"] = to_email
-    message["From"] = from_email
     message["Subject"] = subject
+    
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     create_message = {"raw": encoded_message}
     
@@ -33,7 +33,8 @@ def send_mail(service, *, to_email, from_email, subject, content):
   except HttpError as error:
     print(f"An error occurred: {error}")
     send_message = None
-  return send_message
+  else:
+    return True
 
 # For testing purposes
 if __name__ == "__main__":

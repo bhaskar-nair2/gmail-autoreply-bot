@@ -3,7 +3,7 @@ import json
 from dotenv import load_dotenv
 
     
-def pretty_print_event(event):
+def get_final_response(event):
     """Pretty prints an event with truncation for long content."""
     if "content" not in event:
         print(f"[{event.get('author', 'unknown')}]: {event}")
@@ -11,14 +11,13 @@ def pretty_print_event(event):
         
     author = event.get("author", "unknown")
     parts = event["content"].get("parts", [])
+    final_response = ''
     
     for part in parts:
         if "text" in part:
             text = part["text"]
-            # Truncate long text to 200 characters
-            if len(text) > 200:
-                text = text[:197] + "..."
-            print(f"[{author}]: {text}")
+            final_response += text
+        # ! Other types are ignored for now
         elif "functionCall" in part:
             func_call = part["functionCall"]
             print(f"[{author}]: Function call: {func_call.get('name', 'unknown')}")
@@ -35,21 +34,21 @@ def pretty_print_event(event):
             if len(response) > 100:
                 response = response[:97] + "..."
             print(f"  Response: {response}")
+    return final_response
 
 def make_agent_call(service, thread_id, session_id, message):
     """Calls the AI agent with the provided message and session."""
     try:
-        # Assuming agent_engine_client is already initialized
-        response = service.stream_query(
+        extracted_text = ""
+        
+        for event in service.stream_query(
             user_id=thread_id,
             session_id=session_id,
             message=f"{message}",
-        )
+        ):
+            extracted_text= get_final_response(event)
         
-        for event in response:
-            pretty_print_event(event)
-        
-        return response
+        return extracted_text
     except Exception as e:
         print(f"Error calling AI agent: {e}")
         return None
