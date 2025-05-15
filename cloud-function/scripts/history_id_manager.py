@@ -1,11 +1,14 @@
 # scripts/history_id_manager.py
-from google.cloud import firestore
 import time
+from google.cloud import firestore
+from services.firestore_service import firestore_db_client as db_client
 
 # Note: The firestore_db client should be initialized in your main Cloud Function file
 # and passed to these functions. The collection_name should also be passed or configured.
 
-def get_last_processed_history_id(db_client: firestore.Client, user_email: str, collection_name: str):
+HISTORY_ID_DB = "history_id_storage"
+
+def get_last_processed_history_id(user_email: str):
     """
     Retrieves the last processed historyId for a given user from Firestore.
 
@@ -13,23 +16,12 @@ def get_last_processed_history_id(db_client: firestore.Client, user_email: str, 
         db_client: An initialized Firestore client.
         user_email: The email address of the user whose historyId is being fetched.
                     This will be used as the document ID in Firestore.
-        collection_name: The name of the Firestore collection storing historyIds.
 
     Returns:
         The last processed historyId as a string, or None if not found.
     """
-    if not db_client:
-        print("ERROR (history_id_manager): Firestore client is not provided.")
-        return None
-    if not user_email:
-        print("ERROR (history_id_manager): user_email cannot be empty.")
-        return None
-    if not collection_name:
-        print("ERROR (history_id_manager): collection_name cannot be empty.")
-        return None
-
     try:
-        doc_ref = db_client.collection(collection_name).document(user_email)
+        doc_ref = db_client.collection(HISTORY_ID_DB).document(user_email)
         doc = doc_ref.get()
 
         if doc.exists:
@@ -42,14 +34,14 @@ def get_last_processed_history_id(db_client: firestore.Client, user_email: str, 
                 print(f"Document for '{user_email}' exists but 'lastHistoryId' field is missing or empty.")
                 return None
         else:
-            print(f"No historyId document found for user '{user_email}' in Firestore collection '{collection_name}'. Will need to establish a baseline.")
+            print(f"No historyId document found for user '{user_email}' in Firestore collection '{HISTORY_ID_DB}'. Will need to establish a baseline.")
             return None
     except Exception as e:
         print(f"Error getting historyId for '{user_email}' from Firestore: {e}")
         # Depending on the error, you might want to raise it or handle differently
         return None
 
-def update_last_processed_history_id(db_client: firestore.Client, user_email: str, new_history_id: str, collection_name: str):
+def update_last_processed_history_id(user_email: str, new_history_id: str):
     """
     Updates/creates the last processed historyId for a given user in Firestore.
 
@@ -60,21 +52,8 @@ def update_last_processed_history_id(db_client: firestore.Client, user_email: st
         new_history_id: The new historyId to store.
         collection_name: The name of the Firestore collection.
     """
-    if not db_client:
-        print("ERROR (history_id_manager): Firestore client is not provided for update.")
-        return False
-    if not user_email:
-        print("ERROR (history_id_manager): user_email cannot be empty for update.")
-        return False
-    if not new_history_id:
-        print("ERROR (history_id_manager): new_history_id cannot be empty for update.")
-        return False
-    if not collection_name:
-        print("ERROR (history_id_manager): collection_name cannot be empty for update.")
-        return False
-
     try:
-        doc_ref = db_client.collection(collection_name).document(user_email)
+        doc_ref = db_client.collection(HISTORY_ID_DB).document(user_email)
         doc_ref.set({
             "lastHistoryId": str(new_history_id), # Ensure it's stored as a string
             "updatedTimestamp": firestore.SERVER_TIMESTAMP, # Automatically set server-side timestamp

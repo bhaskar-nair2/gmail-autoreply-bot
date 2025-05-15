@@ -16,6 +16,7 @@ from scripts.send_mails import send_mail
 from scripts.extract_pub_sub import decode_pub_sub
 from scripts.get_agent_session import get_agent_session
 from scripts.call_agent import make_agent_call
+from scripts.history_id_manager import get_last_processed_history_id, update_last_processed_history_id
 
 
 # Get instance of Gmail Service and Agent Service
@@ -32,44 +33,48 @@ if not agent_engine_client or not gmail_service:
 def process_new_email(cloud_event : functions_framework.CloudEvent):
     print(f"\n-----Received Cloud Event-----\n")
     
-    # try:
+    try:
         # Decode pub/sub message
-    notified_email_address, history_id = decode_pub_sub(cloud_event)
-    
-    # Fetch mails using historyId
-    new_emails = get_emails_from_history(gmail_service, history_id = history_id)
-    
-    # Loop through messages in the history
-    for email_content in new_emails:
-        # Fetch full email content
-        email_data = get_email_details(email_content)
-        thread_id = f"{email_data['thread_id']}"
-        # Find an existing agent session for the email's threadId or create one
-        agent_session = get_agent_session(agent_engine_client, thread_id)
+        notified_email_address, notified_history_id = decode_pub_sub(cloud_event)
         
-        # Send message body and other info to the agent using the session
-        # ? Agent can use it's own tools to fetch more data if needed
-        agent_response = make_agent_call(
-            agent_engine_client, 
-            thread_id, 
-            agent_session.get("id"), 
-            email_data
+        last_processed_history_id = get_last_processed_history_id(notified_email_address)
+        if not last_processed_history_id:
+            last_processed_history_id = notified_history_id
+        # Fetch mails using historyId
+        new_emails = get_emails_from_history(gmail_service, history_id = last_processed_history_id)
+        
+        # Loop through messages in the history
+        for email_content in new_emails:
+            # Fetch full email content
+            email_data = get_email_details(email_content)
+            thread_id = f"{email_data['thread_id']}"
+            # Find an existing agent session for the email's threadId or create one
+            agent_session = get_agent_session(agent_engine_client, thread_id)
+            
+            # Send message body and other info to the agent using the session
+            # ? Agent can use it's own tools to fetch more data if needed
+            agent_response = make_agent_call(
+                agent_engine_client, 
+                thread_id, 
+                agent_session.get("id"), 
+                email_data
+                )
+            
+            # Use send_mail to send the reply
+            send_mail(
+                gmail_service,
+                to_email= email_data.get("from"), # !
+                from_email= notified_email_address,
+                subject= email_data.get("subject"), # ? to reply to same thread
+                content= agent_response
             )
         
-        # Use send_mail to send the reply
-        send_mail(
-            gmail_service,
-            to_email= email_data.get("from"), # !
-            from_email= notified_email_address,
-            subject= email_data.get("subject"), # ? to reply to same thread
-            content= agent_response
-        )
-    # Update History ID in Firestore
-    
-    # except Exception as e:
-    #     print(f"Error processing email: {e}")
-    #     return print("Error processing email.", 500)
-    # else:
-    #     print(f"Successfully processed Pub/Sub event")
-    #     return print("Email processed successfully.", 200)
+        # Update History ID in Firestore
+        update_last_processed_history_id(notified_email_address, notified_history_id)
+    except Exception as e:
+        print(f"Error processing email: {e}")
+        return print("Error processing email.", 500)
+    else:
+        print(f"Successfully processed Pub/Sub event")
+        return print("Email processed successfully.", 200)
 
