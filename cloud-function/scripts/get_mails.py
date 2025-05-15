@@ -7,13 +7,13 @@ from googleapiclient.errors import HttpError
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-def get_emails_from_history(service, start_history_id):
+def get_emails_from_history(service,*, history_id):
   """
   Retrieves messages added to the mailbox since the given startHistoryId.
 
   Args:
     service: Authorized Gmail API service instance.
-    start_history_id: The starting history ID.
+    history_id: The starting history ID.
 
   Returns:
     A list of message objects added since the startHistoryId, or None if an error occurs.
@@ -21,7 +21,7 @@ def get_emails_from_history(service, start_history_id):
   try:
     history = service.users().history().list(
       userId='me',
-      startHistoryId=start_history_id,
+      startHistoryId=history_id,
       # historyTypes=['messageAdded'] # Focus on added messages
     ).execute()
 
@@ -32,7 +32,7 @@ def get_emails_from_history(service, start_history_id):
        page_token = history['nextPageToken']
        history = service.users().history().list(
          userId='me',
-         startHistoryId=start_history_id,
+         startHistoryId=history_id,
          historyTypes=['messageAdded'],
          pageToken=page_token
        ).execute()
@@ -52,7 +52,7 @@ def get_emails_from_history(service, start_history_id):
     print(f'An error occurred: {error}')
     # Handle specific errors like invalid startHistoryId if needed
     if error.resp.status == 404:
-       print(f"History ID {start_history_id} not found.")
+       print(f"History ID {history_id} not found.")
     return None
   except Exception as e:
     print(f'An unexpected error occurred during history retrieval: {e}')

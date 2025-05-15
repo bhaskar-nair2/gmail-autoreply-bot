@@ -2,29 +2,6 @@ import os
 import json
 from dotenv import load_dotenv
 
-import vertexai
-from vertexai import agent_engines 
-
-load_dotenv()
-
-# --- Configuration (Set as Environment Variables in Cloud Function) ---
-PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT") # Automatically set by Cloud Functions
-LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1") # Default if not set
-AGENT_ENGINE_ID = os.environ.get("AGENT_ENGINE_ID") # Full resource name of your Reasoning Engine
-
-
-try:
-    if PROJECT_ID and LOCATION and AGENT_ENGINE_ID:
-        print(f"Initializing Vertex AI for project {PROJECT_ID} in {LOCATION}...")
-        vertexai.init(project=PROJECT_ID, location=LOCATION)
-        adk_app = agent_engines.get(AGENT_ENGINE_ID)
-        print(f"Initialized Vertex AI and Agent Engine client for: {adk_app.resource_name}")
-    else:
-        print("ERROR: Missing one or more environment variables for Vertex AI init: GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, AGENT_ENGINE_ID")
-        adk_app = None
-except Exception as e:
-    print(f"FATAL: Could not initialize Vertex AI or Agent Engine: {e}")
-    adk_app = None
     
 def pretty_print_event(event):
     """Pretty prints an event with truncation for long content."""
@@ -59,40 +36,31 @@ def pretty_print_event(event):
                 response = response[:97] + "..."
             print(f"  Response: {response}")
 
-def call_ai_agent(user_query, user_id='test_session'):
-  """Call the AI agent to process an email and return the response."""
-  if adk_app is None:
-      print("ERROR: Agent Engine client is not initialized. Exiting.")
-      return "Agent Engine client is not initialized."
-  
-  session_id = None
-  session = None
-  # 
-  sessions = adk_app.list_sessions(user_id=user_id).get("sessions", [])
-  print(sessions)
-  
-#   if len(sessions) > 0 :
-#     session_id = sessions[0].get("id")
-#   else:
-#     session = adk_app.create_session(user_id=user_id)
-#     session_id = session.get("id")
-#     print(f"Created new session with ID: {session_id}")
-    
-  full_response_text = ""
-  session = adk_app.create_session(user_id=user_id)
-  print(session)
-  
-  for event in adk_app.stream_query(input={"messages": [("user", user_query)]}):
-    print(event)
+def make_agent_call(service, thread_id, session_id, message):
+    """Calls the AI agent with the provided message and session."""
+    try:
+        # Assuming agent_engine_client is already initialized
+        response = service.stream_query(
+            user_id=thread_id,
+            session_id=session_id,
+            message=f"{message}",
+        )
         
-  return full_response_text.strip()
+        for event in response:
+            pretty_print_event(event)
+        
+        return response
+    except Exception as e:
+        print(f"Error calling AI agent: {e}")
+        return None
+
 
 
 if __name__ == "__main__":
     # This is a placeholder for the actual function call.
     # In a real scenario, this would be triggered by an event (e.g., a new email).
    
-    response = call_ai_agent("Tell me various things about Labradors", user_id="test_session2")
+    response = make_agent_call("Tell me various things about Labradors", user_id="test_session2")
     print(f"Response from AI agent: {response}")
     
     # print(adk_app.operation_schemas())
