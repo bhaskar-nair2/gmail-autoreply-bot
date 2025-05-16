@@ -18,7 +18,7 @@ from vertexai import agent_engines
 from vertexai.preview import reasoning_engines
 import logging
 from dotenv import set_key
-from gmail_agent.agent import root_agent
+from gmail_agent.agent import gmail_agent
 
 load_dotenv()
 
@@ -46,10 +46,10 @@ def update_env_file(agent_engine_id, env_file_path):
     except Exception as e:
         print(f"Error updating .env file: {e}")
 
-logger.info("deploying app...")
+print("deploying app...")
 
 app = reasoning_engines.AdkApp(
-    agent=root_agent,
+    agent= gmail_agent,
     enable_tracing=True,
 )
 
@@ -59,7 +59,7 @@ remote_app = agent_engines.create(
     app,
     display_name="gmail_agent",
     requirements=[
-        "google-cloud-aiplatform[adk,agent-engines]==1.88.0",
+        "google-cloud-aiplatform[adk,agent-engines,llama-index]==1.90.0",
         "google-adk",
         "python-dotenv",
         "google-auth",
@@ -68,8 +68,7 @@ remote_app = agent_engines.create(
         "pydantic-settings",
         "tabulate",
         "requests",
-        "llama-index",
-        "cloudpickle==3.0", # new
+        "cloudpickle==3.0"
     ],
     extra_packages=[
         "./gmail_agent",

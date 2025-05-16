@@ -2,18 +2,27 @@ import base64
 from email.message import EmailMessage
 
 from googleapiclient.errors import HttpError
-from .gmail_service import get_gmail_service
+from google.adk.tools import ToolContext
+from .gmail_service import instance 
 
 
-def send_email(service, message:EmailMessage):
-  """Create and send an email message
-  Print the returned  message id
-  Returns: Message object, including message id
-
-  Load pre-authorized user credentials from the environment.
-  TODO(developer) - See https://developers.google.com/identity
-  for guides on implementing OAuth2 for the application.
+def send_email(recipient_email : str,subject : str,email_content : str, tool_context: ToolContext):
   """
+  A simple tool to send an email
+  
+  Args:
+    - recipient_email (str): Email address of the recipient
+    - subject (str): Subject of the email
+    - email_content (str): Main contents of the email
+  """
+  
+  service = instance.service
+  
+  message = EmailMessage()
+  message.set_content(email_content)
+  message["To"] = recipient_email
+  message["Subject"] = subject
+  # message["From"] = tool_context.state["user_id"]
 
   try:
     # encoded message
@@ -34,7 +43,6 @@ def send_email(service, message:EmailMessage):
 
 # For testing purposes
 if __name__ == "__main__":
-  service = get_gmail_service()
   to_email = "b.bhaskar.nair@gmail.com"
   from_email = "bhaskarnair.work@gmail.com" 
   subject, content = "TEST", "This is a test email"
@@ -42,7 +50,6 @@ if __name__ == "__main__":
   message = EmailMessage()
   message.set_content(content)
   message["To"] = to_email
-  message["From"] = from_email
   message["Subject"] = subject
   
-  send_email(service, message)
+  send_email(message)

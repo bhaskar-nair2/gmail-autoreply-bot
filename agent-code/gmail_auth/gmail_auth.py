@@ -4,29 +4,22 @@ from dotenv import load_dotenv
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from google.cloud import secretmanager
-
+import google_crc32c  # type: ignore
 
 load_dotenv()
 
 # ! If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly",
+SCOPES = [
+          "https://www.googleapis.com/auth/gmail.readonly",
           "https://www.googleapis.com/auth/gmail.compose",
           "https://www.googleapis.com/auth/gmail.send",
           "https://www.googleapis.com/auth/gmail.addons.current.message.action"
           ]
-LABELS = ["INBOX"]
-PUBSUB_TOPIC = "projects/vraie-3a692/topics/gmail_bot_messages"
-
-PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT") # Automatically set by Cloud Functions
-SECRET_NAME_GMAIL_CREDS = os.environ.get("SECRET_NAME_GMAIL_CREDS") # Name of the secret in 
-
-
-from google.cloud import secretmanager
-import google_crc32c  # type: ignore
-
+# Automatically set by Cloud Functions
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT") 
+# Name of the secret in 
+SECRET_NAME_GMAIL_CREDS = os.environ.get("SECRET_NAME_GMAIL_CREDS") 
 
 def add_secret_version() -> secretmanager.SecretVersion:
     """
@@ -61,9 +54,11 @@ def add_secret_version() -> secretmanager.SecretVersion:
     # Print the new secret version name.
     print(f"Added secret version: {response.name}")
 
-def main():
-  """Shows basic usage of the Gmail API.
-  Lists the user's Gmail labels.
+def create_token_file():
+  """
+  Creates a token.json file with the user's access and refresh tokens.
+  This file is created automatically when the authorization flow completes for
+  the first time.
   """
   creds = None
   # The file token.json stores the user's access and refresh tokens, and is
@@ -84,43 +79,15 @@ def main():
     with open("token.json", "w") as token:
       token.write(creds.to_json())
     # Add the secret version to Secret Manager
-    add_secret_version()
       
-  # Call gmail.user.watch to connect to cloud function
-  try:
-    # Call the Gmail API
-    service = build("gmail", "v1", credentials=creds)
-    service.users().watch(
-        userId="me",
-        body={
-            "labelIds": LABELS,
-            "topicName": PUBSUB_TOPIC,
-        },
-    ).execute()
-    
-    print("Watch request sent successfully.")
+def refresh_gmail_token():
+  """
+  Creates a token.json file with the user's access and refresh tokens.
+  Then saves it in the GCP Secret Manager.
+  """
+  print("--------Refreshing Gmail token----------")
+  create_token_file()
+  add_secret_version()
+  print("--------Token Refreshed----------")
+  
 
-  except HttpError as error:
-    # TODO(developer) - Handle errors from gmail API.
-    print(f"An error occurred: {error}")
-    
-  try:
-    # Call the Gmail API
-    service = build("gmail", "v1", credentials=creds)
-    results = service.users().labels().list(userId="me").execute()
-    labels = results.get("labels", [])
-
-    if not labels:
-      print("No labels found.")
-      return
-    print("Labels:")
-    for label in labels:
-      print(label["name"])
-
-  except HttpError as error:
-    # TODO(developer) - Handle errors from gmail API.
-    print(f"An error occurred: {error}")
-
-
-if __name__ == "__main__":
-  main()
