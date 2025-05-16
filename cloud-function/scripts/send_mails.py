@@ -31,14 +31,10 @@ def send_mail(service, *, to_email, from_email, subject, content):
     )
     print(f'Message sent with Id: {send_message["id"]}')
   except HttpError as error:
-    print(f"An error occurred: {error}")
+    print(f"n error occurred in send mails: {error}")
     send_message = None
   else:
     return True
-
-# TODO: Mark as read/processed in Gmail (important!)
-def mark_as_read(service, mail_id):
-  service.users().messages()
 
 # For testing purposes
 if __name__ == "__main__":

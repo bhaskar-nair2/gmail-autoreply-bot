@@ -17,6 +17,7 @@ from scripts.extract_pub_sub import decode_pub_sub
 from scripts.get_agent_session import get_agent_session
 from scripts.call_agent import make_agent_call
 from scripts.history_id_manager import get_last_processed_history_id, update_last_processed_history_id
+from scripts.change_mail_labels import mark_as_read
 
 
 # Get instance of Gmail Service and Agent Service
@@ -49,6 +50,7 @@ def process_new_email(cloud_event : functions_framework.CloudEvent):
             # Fetch full email content
             email_data = get_email_details(email_content)
             thread_id = f"{email_data['thread_id']}"
+            message_id = f"{email_data['message_id']}"
             # Find an existing agent session for the email's threadId or create one
             agent_session = get_agent_session(agent_engine_client, thread_id)
             
@@ -69,6 +71,9 @@ def process_new_email(cloud_event : functions_framework.CloudEvent):
                 subject= email_data.get("subject"), # ? to reply to same thread
                 content= agent_response
             )
+            
+            # Mark email as read
+            mark_as_read(gmail_service, notified_email_address, message_id)
         
         # Update History ID in Firestore
         update_last_processed_history_id(notified_email_address, notified_history_id)
