@@ -42,7 +42,8 @@ def process_new_email(cloud_event : functions_framework.CloudEvent):
             last_processed_history_id = notified_history_id
         # Fetch mails using historyId
         new_emails = get_emails_from_history(gmail_service, history_id = last_processed_history_id)
-        
+        if len(new_emails) == 0:
+            print("No new mails to process!!")
         # Loop through messages in the history
         for email_content in new_emails:
             # Fetch full email content
@@ -72,9 +73,8 @@ def process_new_email(cloud_event : functions_framework.CloudEvent):
         # Update History ID in Firestore
         update_last_processed_history_id(notified_email_address, notified_history_id)
     except Exception as e:
-        print(f"Error processing email: {e}")
-        return print("Error processing email.", 500)
+        print(f"-----Error processing Event: {e}-----")
+        return print("Error processing Event.", 500)
     else:
-        print(f"Successfully processed Pub/Sub event")
-        return print("Email processed successfully.", 200)
+        return print("-----Event processed successfully-----", 200)
 
