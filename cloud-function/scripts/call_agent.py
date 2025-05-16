@@ -38,6 +38,7 @@ def get_final_response(event):
 
 def make_agent_call(service, thread_id, session_id, message):
     """Calls the AI agent with the provided message and session."""
+    print("!!!! Calling Reasoning Agent !!!!")
     try:
         extracted_text = ""
         

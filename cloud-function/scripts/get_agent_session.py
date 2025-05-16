@@ -33,13 +33,12 @@ def save_new_session(session_id, thread_id):
     
 
 def get_agent_session(agent_enging, thread_id):
+    print("Getting Session")
     session_id, new = get_session_id(thread_id)
-    
     if new:
         session = agent_enging.create_session(user_id=thread_id)
         save_new_session(session.get("id"), thread_id)
     else:
         session = agent_enging.get_session(user_id="u_123", session_id=session_id)
-
     return session
 

@@ -7,7 +7,7 @@ from googleapiclient.errors import HttpError
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-def get_emails_from_history(service,*, history_id):
+def get_emails_from_history(service,*, history_id) -> list:
   """
   Retrieves messages added to the mailbox since the given startHistoryId.
 
@@ -18,6 +18,7 @@ def get_emails_from_history(service,*, history_id):
   Returns:
     A list of message objects added since the startHistoryId, or None if an error occurs.
   """
+  print("Getting history from gmail")
   try:
     history = service.users().history().list(
       userId='me',
@@ -46,6 +47,7 @@ def get_emails_from_history(service,*, history_id):
           full_message = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
           # Extract relevant details
           messages.append(full_message) 
+    print(f"{len(messages)} New messages found")
     return messages
 
   except HttpError as error:

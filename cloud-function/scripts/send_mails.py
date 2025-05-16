@@ -12,7 +12,7 @@ def send_mail(service, *, to_email, from_email, subject, content):
   TODO(developer) - See https://developers.google.com/identity
   for guides on implementing OAuth2 for the application.
   """
-  print("-----Sending email-----")
+  print("Sending Email")
   try:
     # encoded message
     message = EmailMessage()
@@ -35,6 +35,10 @@ def send_mail(service, *, to_email, from_email, subject, content):
     send_message = None
   else:
     return True
+
+# TODO: Mark as read/processed in Gmail (important!)
+def mark_as_read(service, mail_id):
+  service.users().messages()
 
 # For testing purposes
 if __name__ == "__main__":
