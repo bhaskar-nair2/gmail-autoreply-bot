@@ -4,9 +4,13 @@ import base64
 import functions_framework
 from main import process_new_email
 
+global TESTING
+
+TESTING = True
+
 def main():
   print("Have you updated the History ID?")
-  event_data = {'emailAddress': 'bhaskarnair.work@gmail.com', 'historyId': '12947'}
+  event_data = {'emailAddress': 'bhaskarnair.work@gmail.com', 'historyId': '15822'}
   encoded_data = base64.b64encode(json.dumps(event_data).encode()).decode()
   
   payload = functions_framework.CloudEvent(
@@ -22,7 +26,6 @@ def main():
     "subscription": "projects/your-gcp-project-id/subscriptions/your-subscription-name"
     }
   )
-  print(payload)
   process_new_email(payload)
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ def process_new_email(cloud_event : functions_framework.CloudEvent):
             # Fetch full email content
             email_data = get_email_details(email_content)
             thread_id = f"{email_data['thread_id']}"
-            message_id = f"{email_data['message_id']}"
+            message_id = f"{email_content['id']}"
             # Find an existing agent session for the email's threadId or create one
             agent_session = get_agent_session(agent_engine_client, thread_id)
             
