@@ -12,12 +12,13 @@ from google.cloud import secretmanager
 load_dotenv()
 
 # ! If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly",
+SCOPES = ["https://www.googleapis.com/auth/gmail.modify",
+          "https://www.googleapis.com/auth/gmail.readonly",
           "https://www.googleapis.com/auth/gmail.compose",
           "https://www.googleapis.com/auth/gmail.send",
           "https://www.googleapis.com/auth/gmail.addons.current.message.action"
           ]
-LABELS = ["INBOX"]
+LABELS = ["INBOX", "Label_6682199651960682642"]
 PUBSUB_TOPIC = "projects/vraie-3a692/topics/gmail_bot_messages"
 
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT") # Automatically set by Cloud Functions
@@ -115,7 +116,7 @@ def main():
       return
     print("Labels:")
     for label in labels:
-      print(label["name"])
+      print(f"Name: {label["name"]} ----- ID: {label["id"]}")
 
   except HttpError as error:
     # TODO(developer) - Handle errors from gmail API.
