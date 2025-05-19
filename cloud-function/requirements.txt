@@ -7,3 +7,4 @@ google-cloud-secret-manager
 vertexai
 google-adk
 firebase-admin
+Flask

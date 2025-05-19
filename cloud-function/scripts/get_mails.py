@@ -30,6 +30,7 @@ def get_emails_from_history(service,*, history_id) -> list:
     ).execute()
 
     messages = []
+    latest_history_id_from_batch = history.get("historyId","")
     # History records are returned oldest first.
     changes = history.get('history', [])
     while 'nextPageToken' in history:
@@ -51,7 +52,7 @@ def get_emails_from_history(service,*, history_id) -> list:
           # Extract relevant details
           messages.append(full_message) 
     print(f"{len(messages)} New messages found")
-    return messages
+    return messages, latest_history_id_from_batch
 
   except HttpError as error:
     print(f'An error occurred: {error}')

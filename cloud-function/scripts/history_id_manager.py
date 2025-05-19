@@ -1,5 +1,7 @@
 # scripts/history_id_manager.py
+import os
 import time
+
 from google.cloud import firestore
 from services.firestore_service import firestore_db_client as db_client
 
@@ -64,3 +66,16 @@ def update_last_processed_history_id(user_email: str, new_history_id: str):
     except Exception as e:
         print(f"Error updating historyId for '{user_email}' in Firestore: {e}")
         return False
+
+def create_baseline_history_id(service):
+    try:
+        TARGET_USER_EMAIL = os.environ.get("TARGET_USER_EMAIL")
+        profile = service.users().getProfile(userId=TARGET_USER_EMAIL).execute()
+        current_mailbox_hid = profile.get('historyId')
+        if not current_mailbox_hid:
+            raise ValueError("Could not retrieve current historyId from Gmail profile.")
+        print(f"Setting baseline historyId for {TARGET_USER_EMAIL} to current mailbox state: {current_mailbox_hid}")
+        update_last_processed_history_id(TARGET_USER_EMAIL, current_mailbox_hid)
+        return current_mailbox_hid
+    except Exception as e_profile:
+        print(f"CRITICAL: Error getting profile historyId for baseline for {TARGET_USER_EMAIL}: {e_profile}.")
