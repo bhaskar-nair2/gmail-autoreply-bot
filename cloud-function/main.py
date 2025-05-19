@@ -51,6 +51,7 @@ def process_new_email(cloud_event : functions_framework.CloudEvent):
             email_data = get_email_details(email_content)
             thread_id = f"{email_data['thread_id']}"
             message_id = f"{email_content['id']}"
+            message_id_header = f"{email_content["message_id_header"]}"
             # Find an existing agent session for the email's threadId or create one
             agent_session = get_agent_session(agent_engine_client, thread_id)
             
@@ -64,13 +65,15 @@ def process_new_email(cloud_event : functions_framework.CloudEvent):
                 )
             
             # Use send_mail to send the reply
-            send_mail(
-                gmail_service,
-                to_email= email_data.get("from"), # !
-                from_email= notified_email_address,
-                subject= email_data.get("subject"), # ? to reply to same thread
-                content= agent_response
-            )
+            # send_mail(
+            #     gmail_service,
+            #     to_email= email_data.get("from"), # !
+            #     from_email= notified_email_address,
+            #     subject= email_data.get("subject"), # ? to reply to same thread
+            #     content= agent_response,
+            #     thread_id = thread_id,
+            #     message_id_header = message_id_header
+            # )
             
             # Mark email as read
             mark_as_read(gmail_service, notified_email_address, message_id)

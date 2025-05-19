@@ -1,9 +1,10 @@
 import base64
 from email.message import EmailMessage
+import string
 
 from googleapiclient.errors import HttpError
 
-def send_mail(service, *, to_email, from_email, subject, content):
+def send_mail(service, *, to_email, from_email, subject, content, thread_id=None, message_id_header = None):
   """Create and send an email message
   Print the returned  message id
   Returns: Message object, including message id
@@ -18,10 +19,20 @@ def send_mail(service, *, to_email, from_email, subject, content):
     message = EmailMessage()
     message.set_content(f"{content}")
     message["To"] = to_email
-    message["Subject"] = subject
+    message["Subject"] = process_subject(subject)
     
+    # Set headers for correct threading
+    if message_id_header:
+      message["In-Reply-To"] = message_id_header
+      message["References"] = message_id_header
+
+        
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     create_message = {"raw": encoded_message}
+    
+    # Ensure the reply stays in the same thread
+    if thread_id:
+        create_message["threadId"] = thread_id
     
     send_message = (
         service.users()
@@ -35,6 +46,12 @@ def send_mail(service, *, to_email, from_email, subject, content):
     send_message = None
   else:
     return True
+
+def process_subject(subject = "") -> string:
+  if subject and not subject.lower().startswith("re:"):
+    return f"Re: {subject}"
+  else:
+    return subject
 
 # For testing purposes
 if __name__ == "__main__":

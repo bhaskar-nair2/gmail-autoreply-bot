@@ -4,7 +4,6 @@ gcloud functions deploy gmail-agent-processor \
   --region us-central1 \
   --source . \
   --entry-point process_new_email \
-  --trigger-topic gmail_bot_messages \
   --env-vars-file env.yaml \
   --timeout 540s \
   --service-account gmail-bot-sa@vraie-3a692.iam.gserviceaccount.com \

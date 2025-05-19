@@ -10,7 +10,7 @@ TESTING = True
 
 def main():
   print("Have you updated the History ID?")
-  event_data = {'emailAddress': 'bhaskarnair.work@gmail.com', 'historyId': '15822'}
+  event_data = {'emailAddress': 'bhaskarnair.work@gmail.com', 'historyId': '16395'}
   encoded_data = base64.b64encode(json.dumps(event_data).encode()).decode()
   
   payload = functions_framework.CloudEvent(

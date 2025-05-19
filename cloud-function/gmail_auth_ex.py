@@ -18,7 +18,7 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.modify",
           "https://www.googleapis.com/auth/gmail.send",
           "https://www.googleapis.com/auth/gmail.addons.current.message.action"
           ]
-LABELS = ["INBOX", "Label_6682199651960682642"]
+LABELS = os.environ.get("WATCHED_LABELS")
 PUBSUB_TOPIC = "projects/vraie-3a692/topics/gmail_bot_messages"
 
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT") # Automatically set by Cloud Functions
