@@ -162,10 +162,6 @@ def process_scheduled_email_check(request):
             agent_session_dict = get_agent_session(agent_engine_client_instance, agent_user_id_for_session)
             agent_session_name = agent_session_dict.get("name") # Expecting full session resource name
 
-            if not agent_session_name:
-                print(f"Error: Could not get/create agent session for {agent_user_id_for_session}. Skipping email {original_message_id}.")
-                continue # Skip this email
-
             agent_response_text = make_agent_call(
                 agent_engine_client_instance, 
                 agent_user_id_for_session, 

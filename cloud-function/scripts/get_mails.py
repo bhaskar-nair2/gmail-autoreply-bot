@@ -21,8 +21,6 @@ def get_emails_from_history(service,*, history_id) -> list:
   """
   print("Getting history from gmail")
   try:
-    WATCHED_LABELS = os.environ.get("WATCHED_LABELS")
-    
     history = service.users().history().list(
       userId='me',
       startHistoryId=history_id,

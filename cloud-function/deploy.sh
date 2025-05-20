@@ -8,3 +8,4 @@ gcloud functions deploy gmail-agent-processor-polling \
   --timeout 540s \
   --service-account gmail-bot-sa@vraie-3a692.iam.gserviceaccount.com \
   --memory 512MiB \
+  --trigger-http
